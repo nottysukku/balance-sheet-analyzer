@@ -61,7 +61,10 @@ Deploying is an import, not a config exercise:
 
 1. Go to [vercel.com/new](https://vercel.com/new) and import this repository.
 2. Leave every setting at its default - `vercel.json` already declares the build
-   command, the output directory and the function limits.
+   command, the output directory and the files the function needs. `maxDuration`
+   is deliberately not set: the allowed range depends on the plan, and an
+   out-of-range value fails the deploy rather than degrading, so the plan
+   default applies. A 15-page scan parses in about 1.3 s warm.
 3. Optionally add `ANTHROPIC_API_KEY` as an environment variable to turn on the
    Claude-assisted steps.
 
