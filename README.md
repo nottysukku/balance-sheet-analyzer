@@ -44,7 +44,7 @@ their own and the UI says so.
 npm test         # 90 tests, including end-to-end against the real scanned PDF
 npm run build    # type-check and build both workspaces
 npm run typecheck
-npm start        # run the built API
+npm run build --workspace server && npm start --workspace server   # run the built API
 ```
 
 ---
@@ -60,11 +60,21 @@ every `/api/*` path to it.
 Deploying is an import, not a config exercise:
 
 1. Go to [vercel.com/new](https://vercel.com/new) and import this repository.
-2. Leave every setting at its default - `vercel.json` already declares the build
-   command, the output directory and the files the function needs. `maxDuration`
-   is deliberately not set: the allowed range depends on the plan, and an
-   out-of-range value fails the deploy rather than degrading, so the plan
-   default applies. A 15-page scan parses in about 1.3 s warm.
+2. Leave every setting at its default - `vercel.json` already declares the
+   framework, build command, output directory and the files the function needs.
+
+`vercel.json` sets `"framework": "vite"`, and the root `package.json`
+deliberately has **no `start` script**. Both exist to stop Vercel classifying
+this as a Node backend to run: with an Express dependency and no frontend
+framework declared, it picks its server preset, hunts for an `app.js` /
+`index.js` / `server.js` entrypoint inside the output directory, and fails
+before the frontend build ever runs. Declaring the framework makes it a static
+build with serverless functions alongside, which is what this project actually
+is.
+
+`maxDuration` is deliberately not set: the allowed range depends on the plan,
+and an out-of-range value fails the deploy rather than degrading, so the plan
+default applies. A 15-page scan parses in about 1.3 s warm.
 3. Optionally add `ANTHROPIC_API_KEY` as an environment variable to turn on the
    Claude-assisted steps.
 
