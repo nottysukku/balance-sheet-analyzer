@@ -49,6 +49,36 @@ npm start        # run the built API
 
 ---
 
+## Deployment
+
+The app runs on Vercel as a static frontend plus one serverless function. No
+code is duplicated for it: an Express app is already a `(req, res)` handler, so
+`server/src/vercel.ts` exports the *same* application the dev server runs, and
+`api/[...path].ts` is a one-line re-export. The catch-all filename is what routes
+every `/api/*` path to it.
+
+Deploying is an import, not a config exercise:
+
+1. Go to [vercel.com/new](https://vercel.com/new) and import this repository.
+2. Leave every setting at its default - `vercel.json` already declares the build
+   command, the output directory and the function limits.
+3. Optionally add `ANTHROPIC_API_KEY` as an environment variable to turn on the
+   Claude-assisted steps.
+
+Two platform details are handled in code rather than left to fail:
+
+- **Request body limit.** Vercel rejects a body over 4.5 MB before the function
+  runs, so the platform would return an opaque 413 this code never sees.
+  `config.ts` detects `process.env.VERCEL` and advertises a 4 MB ceiling
+  instead; the client reads it from `/api/health` and rejects an oversized file
+  up front with a message that names the limit. Locally the limit stays at
+  `MAX_UPLOAD_MB` (15 MB by default).
+- **Prefix stripping.** Whether the platform strips `/api` before the handler
+  sees the request is an implementation detail, so the router is mounted at both
+  `/api` and `/` and works either way.
+
+---
+
 ## Stack
 
 | Layer | Choice | Why |
@@ -310,7 +340,7 @@ as printed, its page, and its confidence. The markers mean:
 | File renamed to `.pdf` | 422 `CORRUPT_PDF` — format is confirmed from magic bytes, not the extension or the MIME type |
 | Corrupt or encrypted PDF | 422 `UNREADABLE_PDF` |
 | Wrong file type | 415, rejected client-side first, re-checked server-side |
-| Over the size limit | 400 `FILE_TOO_LARGE` (`MAX_UPLOAD_MB`, default 15) |
+| Over the size limit | 400 `FILE_TOO_LARGE` (`MAX_UPLOAD_MB`, default 15; 4 MB when deployed to Vercel) |
 | Balance sheet found but sparse | Succeeds, with warnings and a lowered confidence badge |
 | No line items readable | Succeeds with an explicit empty state rather than a crash |
 

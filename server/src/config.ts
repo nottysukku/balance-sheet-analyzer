@@ -35,9 +35,23 @@ function intFromEnv(name: string, fallback: number): number {
   return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
 }
 
+/**
+ * Upload ceiling, in megabytes.
+ *
+ * Vercel's serverless functions reject a request body over 4.5 MB before it
+ * ever reaches this code, so the platform would return an opaque 413 that the
+ * error handler never sees. Advertising the real ceiling instead lets the
+ * client reject the file first, with a message that says what the limit is.
+ */
+function resolveUploadLimitMb(): number {
+  const configured = intFromEnv('MAX_UPLOAD_MB', 15);
+  const platformCeiling = process.env.VERCEL ? 4 : Number.POSITIVE_INFINITY;
+  return Math.min(configured, platformCeiling);
+}
+
 export const config = {
   port: resolvePort(5174),
-  maxUploadBytes: intFromEnv('MAX_UPLOAD_MB', 15) * 1024 * 1024,
+  maxUploadBytes: resolveUploadLimitMb() * 1024 * 1024,
   anthropic: {
     apiKey: process.env.ANTHROPIC_API_KEY?.trim() || null,
     model: process.env.ANTHROPIC_MODEL?.trim() || 'claude-sonnet-5',

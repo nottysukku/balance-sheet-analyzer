@@ -3,7 +3,19 @@ import express, { type Express } from 'express';
 import { errorHandler, notFoundHandler } from './http/errors.js';
 import { router } from './http/routes.js';
 
-export function createApp(): Express {
+export interface AppOptions {
+  /**
+   * Where the router is mounted. Defaults to `/api`.
+   *
+   * A serverless platform may strip the `/api` prefix before the handler sees
+   * the request, or may not, depending on how the function is routed. Mounting
+   * at both paths makes the app work either way rather than depending on that
+   * detail.
+   */
+  mountPaths?: string[];
+}
+
+export function createApp(options: AppOptions = {}): Express {
   const app = express();
 
   // The Vite dev server proxies /api, so CORS only matters when the frontend
@@ -13,7 +25,7 @@ export function createApp(): Express {
   app.use(express.json({ limit: '64kb' }));
   app.use(express.urlencoded({ extended: false, limit: '64kb' }));
 
-  app.use('/api', router);
+  app.use(options.mountPaths ?? ['/api'], router);
   app.use(notFoundHandler);
   app.use(errorHandler);
 
