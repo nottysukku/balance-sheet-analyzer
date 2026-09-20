@@ -1,0 +1,13 @@
+node_modules/
+dist/
+.env
+.env.local
+*.log
+scratch/
+.DS_Store
+
+# build info
+*.tsbuildinfo
+
+# Claude Code / editor tooling
+.claude/
